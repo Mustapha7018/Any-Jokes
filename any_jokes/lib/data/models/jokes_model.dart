@@ -39,6 +39,8 @@ class Welcome {
         lang: json["lang"],
     );
 
+  get joke => 'No such joke';
+
     Map<String, dynamic> toJson() => {
         "error": error,
         "category": category,

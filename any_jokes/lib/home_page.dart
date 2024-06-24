@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:any_jokes/data/models/jokes_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -10,19 +13,14 @@ class AnyJokes extends StatefulWidget {
 }
 
 class _AnyJokesState extends State<AnyJokes> {
-  String joke = '';
-
-  Future<void> getJoke() async {
-    final response = await http.get(Uri.parse('https://v2.jokeapi.dev/'));
+  Future<Welcome> getJoke() async {
+    final response = await http.get(Uri.parse('https://v2.jokeapi.dev/joke/Any'));
     if (response.statusCode == 200) {
-      setState(() {
-        joke = response.body;
-      });
-    } else {
-      setState(() {
-        joke = 'Failed to get a joke';
-      });
+    
+        return Welcome.fromJson(json.decode(response.body));
+    
     }
+    throw Exception('Failed to fetch joke'); 
   }
 
   @override
@@ -38,6 +36,7 @@ class _AnyJokesState extends State<AnyJokes> {
         resizeToAvoidBottomInset: false,
         body: Container(
           width: double.infinity,
+          height: double.infinity,
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [
@@ -47,59 +46,77 @@ class _AnyJokesState extends State<AnyJokes> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
+            ),
+            child: FutureBuilder<Welcome>(
+            future: getJoke(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+              return const CircularProgressIndicator();
+              } else if (snapshot.hasError) {
+              return Text('Error: ${snapshot.error}');
+              } else {
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                Column(
+                  children: [
                   const Text(
                     'Any Jokes',
                     style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 40,
+                    color: Colors.white,
+                    fontSize: 40,
                     ),
                   ),
                   const SizedBox(height: 20),
                   const Text(
                     'Press the button below to get a joke',
                     style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
+                    color: Colors.white,
+                    fontSize: 20,
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Text(
-                    joke,
-                    style: const TextStyle(
-                      color: Colors.white,
+                  Card(
+                    color: Colors.white,
+                    margin: const EdgeInsets.all(16),
+                    child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      snapshot.data?.joke ?? '',
+                      style: const TextStyle(
+                      color: Colors.black,
                       fontSize: 16,
+                      ),
+                    ),
                     ),
                   ),
-                ],
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
+                  ],
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.white,
                   backgroundColor: Colors.blue,
                   padding: const EdgeInsets.symmetric(
                     vertical: 15,
                     horizontal: 30,
                   ),
-                ),
-                onPressed: getJoke,
-                child: const Text(
+                  ),
+                  onPressed: getJoke,
+                  child: const Text(
                   'Get Joke',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
                   ),
+                  ),
                 ),
-              ),
-            ],
+                ],
+              );
+              }
+            },
+            ),
           ),
-        ),
-      ),
-    );
-  }
-}
+          ),
+        );
+        }
+      }
